@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover"
+    />
+    <title> </title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      /* NO SCROLL — FULLSCREEN TIKTOK STYLE */
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background: #000000;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          "Helvetica Neue",
+          sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #0a0a0a;
+      }
+
+      /* VERTICAL TIKTOK CONTAINER */
+      .tiktok-container {
+        width: 100%;
+        height: 100%;
+        max-width: 450px;
+        background: #000;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+      }
+
+      /* Desktop: centered phone mockup */
+      @media (min-width: 800px) {
+        .tiktok-container {
+          max-width: 420px;
+          height: 90vh;
+          border-radius: 36px;
+          overflow: hidden;
+          box-shadow:
+            0 25px 50px -12px rgba(0, 0, 0, 0.8),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+        body {
+          background: #0a0a0a;
+          justify-content: center;
+        }
+      }
+
+      @media (min-width: 1400px) {
+        .tiktok-container {
+          max-width: 450px;
+          height: 85vh;
+        }
+      }
+
+      /* TITLE SECTION - VISIBLE & GLOWY */
+      .hero-title {
+        background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+        padding: 1rem 1rem 0.8rem;
+        text-align: center;
+        flex-shrink: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .hero-title h1 {
+        font-size: clamp(1.1rem, 5vw, 1.6rem);
+        font-weight: 800;
+        background: linear-gradient(120deg, #ffd166, #f4a261, #e76f51, #ff8c42);
+        background-size: 300% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: shimmer 3s linear infinite;
+        white-space: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        letter-spacing: -0.3px;
+      }
+
+      .hero-title h1::-webkit-scrollbar {
+        display: none;
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      .hero-title p {
+        font-size: 0.65rem;
+        color: #aaa;
+        margin-top: 0.2rem;
+        font-family: monospace;
+      }
+
+      .dance-emoji {
+        display: inline-block;
+        animation: bounce 1s infinite;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-3px);
+        }
+      }
+
+      /* VIDEO WRAPPER - FULL VISIBLE, NO CROP */
+      .video-wrapper {
+        flex: 1;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        min-height: 0;
+        width: 100%;
+      }
+
+      /* object-fit: contain ensures ENTIRE video is visible, black bars if needed */
+      #mainVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        cursor: pointer;
+        background: #000;
+      }
+
+      /* INFO PANEL - BOTTOM CONTROLS */
+      .info-panel {
+        background: rgba(10, 10, 18, 0.95);
+        backdrop-filter: blur(12px);
+        padding: 0.9rem 1.2rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        flex-shrink: 0;
+        font-size: 0.8rem;
+      }
+
+      .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 0.3rem 0.9rem;
+        border-radius: 40px;
+        font-weight: 500;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #22c55e;
+        box-shadow: 0 0 5px #22c55e;
+      }
+
+      .status-dot.paused {
+        background-color: #f97316;
+        box-shadow: 0 0 5px #f97316;
+      }
+
+      .filename {
+        font-family: monospace;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 0.2rem 0.8rem;
+        border-radius: 30px;
+        font-size: 0.7rem;
+      }
+
+      .controls-group {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+      }
+
+      button {
+        background: rgba(255, 255, 255, 0.12);
+        border: none;
+        color: white;
+        font-size: 0.9rem;
+        padding: 0.3rem 1rem;
+        border-radius: 40px;
+        cursor: pointer;
+        font-weight: 500;
+        backdrop-filter: blur(4px);
+        transition: all 0.2s;
+      }
+
+      button:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(0.95);
+      }
+
+      .play-pause-btn {
+        background: #3b82f6;
+        min-width: 85px;
+      }
+
+      .play-pause-btn:hover {
+        background: #2563eb;
+      }
+
+      .fullscreen-hint {
+        font-size: 0.6rem;
+        opacity: 0.7;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.2rem 0.5rem;
+        border-radius: 20px;
+      }
+
+      .error-message {
+        position: absolute;
+        bottom: 80px;
+        left: 12px;
+        right: 12px;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(12px);
+        color: #ff8a8a;
+        padding: 0.8rem;
+        text-align: center;
+        font-size: 0.7rem;
+        border-radius: 20px;
+        z-index: 20;
+        display: none;
+        border-left: 3px solid #ff4444;
+        pointer-events: none;
+      }
+
+      /* Small screens */
+      @media (max-width: 500px) {
+        .info-panel {
+          padding: 0.6rem 1rem;
+        }
+        .hero-title {
+          padding: 0.7rem 0.8rem;
+        }
+        .hero-title h1 {
+          font-size: 1rem;
+          white-space: normal;
+          word-break: keep-all;
+          line-height: 1.3;
+        }
+        .controls-group {
+          gap: 0.4rem;
+        }
+        button {
+          padding: 0.25rem 0.8rem;
+          font-size: 0.8rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tiktok-container">
+      <!-- TITLE: properties unavailable dance with me (visible at top) -->
+      <div class="hero-title">
+        <h1>Dog going for $200</h1>
+        <p>♪ AUTOPLAY · MUTED · TAP VIDEO TO UNMUTE & DANCE ♪</p>
+      </div>
+
+      <!-- VIDEO WRAPPER -->
+      <div class="video-wrapper">
+        <video
+          id="mainVideo"
+          autoplay
+          muted
+          playsinline
+          loop
+          preload="auto"
+          disablePictureInPicture="false"
+        >
+          <source src="funn.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+
+      <div class="info-panel">
+        <div class="status-badge" id="statusBadge">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Auto-playing (muted)</span>
+        </div>
+        <div class="filename" id="filenameLabel">🎬 funn.mp4 • 🔇 MUTED</div>
+        <div class="controls-group">
+          <button id="playPauseBtn" class="play-pause-btn">⏸ Pause</button>
+          <button id="unmuteBtn">🔇 Unmute</button>
+          <div class="fullscreen-hint">⛶ double-tap</div>
+        </div>
+      </div>
+      <div id="errorMsg" class="error-message"></div>
+    </div>
+
+    <script>
+      (function () {
+        // DOM elements
+        const video = document.getElementById("mainVideo");
+        const playPauseBtn = document.getElementById("playPauseBtn");
+        const unmuteBtn = document.getElementById("unmuteBtn");
+        const statusDot = document.getElementById("statusDot");
+        const statusTextSpan = document.getElementById("statusText");
+        const filenameLabel = document.getElementById("filenameLabel");
+        const errorDiv = document.getElementById("errorMsg");
+
+        // ========== AUTO-PLAY IS GUARANTEED because video is MUTED ==========
+        // All modern browsers allow autoplay with muted attribute.
+        // The video will start automatically on page load with no user interaction.
+
+        let isUnmuted = false; // track if user has unmuted
+
+        // Helper: update UI based on video state
+        function updatePlaybackStatus() {
+          if (!video) return;
+          if (video.paused) {
+            statusTextSpan.innerText = "Paused";
+            statusDot.classList.add("paused");
+            playPauseBtn.innerHTML = "▶ Play";
+          } else {
+            statusTextSpan.innerText = "Playing";
+            statusDot.classList.remove("paused");
+            playPauseBtn.innerHTML = "⏸ Pause";
+          }
+        }
+
+        // Update mute/unmute UI and filename badge
+        function updateMuteUI() {
+          if (video.muted) {
+            unmuteBtn.innerHTML = "🔇 Unmute";
+            unmuteBtn.style.background = "rgba(255,255,255,0.12)";
+            if (filenameLabel)
+              filenameLabel.innerHTML = "🎬 funn.mp4 • 🔇 MUTED";
+            isUnmuted = false;
+          } else {
+            unmuteBtn.innerHTML = "🔊 Muted? No! (Sound ON)";
+            unmuteBtn.style.background = "#e67e22";
+            unmuteBtn.style.color = "white";
+            if (filenameLabel)
+              filenameLabel.innerHTML = "🎬 funn.mp4 • 🔊 UNMUTED — DANCE!";
+            isUnmuted = true;
+          }
+        }
+
+        // Handle video errors (missing file, etc)
+        function handleVideoError(e) {
+          console.error("Video error:", e);
+          let errText = "❌ Cannot play funn.mp4. ";
+          if (video.error) {
+            const code = video.error.code;
+            if (code === 2)
+              errText +=
+                'File not found. Place "funn.mp4" in the same folder as this HTML.';
+            else if (code === 4) errText += "Format not supported.";
+            else errText += "Video file error.";
+          } else {
+            errText += 'Make sure "funn.mp4" exists in the root directory.';
+          }
+          errorDiv.style.display = "block";
+          errorDiv.innerHTML =
+            errText +
+            "<br><small>📁 Exact filename required: funn.mp4 (case-sensitive)</small>";
+          statusTextSpan.innerText = "Error";
+          statusDot.style.backgroundColor = "#ef4444";
+          statusDot.classList.remove("paused");
+          playPauseBtn.disabled = true;
+          unmuteBtn.disabled = true;
+          playPauseBtn.style.opacity = "0.5";
+          unmuteBtn.style.opacity = "0.5";
+        }
+
+        function clearError() {
+          if (errorDiv.style.display === "block")
+            errorDiv.style.display = "none";
+          if (playPauseBtn.disabled && !video.error) {
+            playPauseBtn.disabled = false;
+            unmuteBtn.disabled = false;
+            playPauseBtn.style.opacity = "1";
+            unmuteBtn.style.opacity = "1";
+          }
+          if (statusDot.style.backgroundColor === "#ef4444") {
+            statusDot.style.backgroundColor = "";
+            statusDot.style.boxShadow = "";
+            if (!video.paused) statusDot.classList.remove("paused");
+            else statusDot.classList.add("paused");
+          }
+        }
+
+        // ========== UNMUTE WITH USER GESTURE (tap anywhere on video or click Unmute) ==========
+        // Since autoplay is muted, we need a user click to unmute (browser policy)
+        // We'll provide an obvious "Unmute" button + clicking on video also unmutes + plays sound.
+
+        function unmuteAndPlay() {
+          if (video.muted) {
+            video.muted = false;
+            updateMuteUI();
+            // If video is paused for some reason, also play
+            if (video.paused) {
+              video.play().catch((e) => console.log("Play after unmute:", e));
+              updatePlaybackStatus();
+            }
+            // small visual feedback: status badge flashes
+            statusTextSpan.innerText = "🔊 Unmuted!";
+            setTimeout(() => updatePlaybackStatus(), 800);
+          } else {
+            // If already unmuted but user clicks again? we keep unmuted but ensure sound.
+            if (video.paused) {
+              video.play().catch((e) => console.log(e));
+              updatePlaybackStatus();
+            }
+          }
+        }
+
+        // Alternative: mute again? No, we want easy unmute; but unmute button toggles? We'll make it "Unmute" only (one-way to sound)
+        // But user might want to mute again, so we also provide mute toggle via the same button? Better: separate mute? We'll implement unmute only for simplicity,
+        // but also allow re-mute? Let's change unmuteBtn to toggle sound on/off for better UX.
+        function toggleMute() {
+          if (video.muted) {
+            video.muted = false;
+            updateMuteUI();
+            // ensure playing if paused
+            if (video.paused) {
+              video.play().catch((e) => console.log(e));
+              updatePlaybackStatus();
+            }
+            statusTextSpan.innerText = "🔊 Sound ON";
+            setTimeout(() => updatePlaybackStatus(), 1000);
+          } else {
+            video.muted = true;
+            updateMuteUI();
+            statusTextSpan.innerText = "🔇 Muted";
+            setTimeout(() => updatePlaybackStatus(), 1000);
+          }
+        }
+
+        // Event listeners for video lifecycle
+        function bindVideoEvents() {
+          video.addEventListener("canplay", () => {
+            clearError();
+            updatePlaybackStatus();
+          });
+          video.addEventListener("loadedmetadata", () => {
+            clearError();
+            updatePlaybackStatus();
+          });
+          video.addEventListener("play", () => {
+            updatePlaybackStatus();
+            clearError();
+          });
+          video.addEventListener("pause", updatePlaybackStatus);
+          video.addEventListener("playing", updatePlaybackStatus);
+          video.addEventListener("waiting", () => {
+            if (!video.paused) statusTextSpan.innerText = "Loading...";
+          });
+          video.addEventListener("error", handleVideoError);
+          video.addEventListener("volumechange", () => {
+            updateMuteUI();
+            // if user unmutes via browser controls, reflect
+          });
+        }
+
+        // Manual controls
+        function setupControls() {
+          // Play/Pause button
+          playPauseBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (!video) return;
+            if (video.paused) {
+              video
+                .play()
+                .then(() => {
+                  updatePlaybackStatus();
+                  clearError();
+                })
+                .catch((err) => {
+                  if (video.error) handleVideoError();
+                  else {
+                    errorDiv.style.display = "block";
+                    errorDiv.innerHTML =
+                      '⚠️ Playback failed. Verify "funn.mp4" exists.';
+                  }
+                });
+            } else {
+              video.pause();
+              updatePlaybackStatus();
+            }
+          });
+
+          // Toggle mute button (now toggles sound on/off)
+          unmuteBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            toggleMute();
+          });
+
+          // Double-click for fullscreen on video
+          video.addEventListener("dblclick", () => {
+            const container = video.parentElement;
+            if (document.fullscreenElement) {
+              document.exitFullscreen().catch((err) => console.log(err));
+            } else {
+              if (container.requestFullscreen) container.requestFullscreen();
+              else if (video.requestFullscreen) video.requestFullscreen();
+            }
+          });
+
+          // CLICK ON VIDEO: unmutes if muted, otherwise toggles play/pause (best UX)
+          video.addEventListener("click", () => {
+            if (video.muted) {
+              // User wants sound: unmute
+              video.muted = false;
+              updateMuteUI();
+              // Ensure video is playing
+              if (video.paused) {
+                video.play().catch((e) => console.log(e));
+                updatePlaybackStatus();
+              }
+              statusTextSpan.innerText = "🔊 Sound ON!";
+              setTimeout(() => updatePlaybackStatus(), 1200);
+            } else {
+              // If already unmuted, toggle play/pause
+              if (video.paused) {
+                video.play().catch((e) => console.log(e));
+              } else {
+                video.pause();
+              }
+              updatePlaybackStatus();
+            }
+          });
+        }
+
+        // Verify source existence and show helpful error if missing
+        function verifyVideoSource() {
+          setTimeout(() => {
+            if (video.networkState === 3) {
+              // NETWORK_NO_SOURCE
+              handleVideoError(new Event("manualError"));
+            } else if (video.readyState === 0 && !video.error) {
+              setTimeout(() => {
+                if (
+                  video.readyState === 0 &&
+                  !video.error &&
+                  errorDiv.style.display !== "block"
+                ) {
+                  errorDiv.style.display = "block";
+                  errorDiv.innerHTML =
+                    '⚠️ Video "funn.mp4" not found. Please add the file to the same folder as this HTML.';
+                }
+              }, 2000);
+            }
+          }, 300);
+        }
+
+        // Ensure no scrolling on body
+        function lockScroll() {
+          document.body.style.overflow = "hidden";
+          document.documentElement.style.overflow = "hidden";
+          window.addEventListener("resize", () => {
+            document.body.style.overflow = "hidden";
+            document.documentElement.style.overflow = "hidden";
+          });
+        }
+
+        // Guarantee autoplay works: since video is muted, it will autoplay without issues.
+        // But we also double-check: if autoplay fails for any weird reason, we retry.
+        function ensureAutoPlay() {
+          // Video already has autoplay attribute, but some browsers might still block if not muted?
+          // It is muted, so it's safe.
+          if (video.paused && !video.error) {
+            video.play().catch((e) => console.warn("Retry autoplay:", e));
+          }
+        }
+
+        // Final initialization
+        function init() {
+          bindVideoEvents();
+          setupControls();
+
+          // Ensure video is muted for autoplay compliance
+          video.muted = true;
+          updateMuteUI();
+
+          // Make sure autoplay attribute works: we also call play() explicitly
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log("✅ Autoplay started (muted)");
+                updatePlaybackStatus();
+                clearError();
+              })
+              .catch((err) => {
+                console.warn("Autoplay prevented? fallback", err);
+                // Still try to set status
+                updatePlaybackStatus();
+              });
+          }
+
+          // Extra retry after load
+          window.addEventListener("load", () => {
+            if (video.paused && !video.error) {
+              video.play().catch((e) => console.log("load autoplay retry", e));
+            }
+          });
+
+          verifyVideoSource();
+          lockScroll();
+
+          // Ensure object-fit contain (full video visible)
+          video.style.objectFit = "contain";
+
+          // Show initial status
+          statusTextSpan.innerText = "Auto-playing (muted)";
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+  </body>
+</html>

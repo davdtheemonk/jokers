@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Video Player | Auto Play</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0f1e;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            padding: 1rem;
+        }
+
+        /* cinematic card container */
+        .video-container {
+            max-width: 1280px;
+            width: 100%;
+            background: #000000;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        /* responsive video wrapper (maintains aspect ratio) */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* video element fills wrapper, keeps ratio */
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+            outline: none;
+            background: black;
+        }
+
+        /* subtle overlay info panel */
+        .info-panel {
+            padding: 1.2rem 1.8rem;
+            background: linear-gradient(145deg, #11151f 0%, #0b0e16 100%);
+            color: #eef2ff;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            padding: 0.4rem 1rem;
+            border-radius: 60px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #22c55e;
+            box-shadow: 0 0 6px #22c55e;
+            transition: background-color 0.2s;
+        }
+
+        .status-dot.paused {
+            background-color: #f97316;
+            box-shadow: 0 0 6px #f97316;
+        }
+
+        .filename {
+            font-family: monospace;
+            background: #00000055;
+            padding: 0.3rem 0.9rem;
+            border-radius: 40px;
+            letter-spacing: 0.3px;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            padding: 0.4rem 1rem;
+            border-radius: 60px;
+            cursor: pointer;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.97);
+        }
+
+        .play-pause-btn {
+            background: #3b82f6;
+            color: white;
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        .play-pause-btn:hover {
+            background: #2563eb;
+            transform: scale(0.98);
+        }
+
+        /* custom fallback / message area (just in case) */
+        .error-message {
+            background: #ffebee;
+            color: #b91c1c;
+            padding: 0.8rem;
+            text-align: center;
+            font-size: 0.85rem;
+            border-radius: 16px;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        /* responsive adjustments */
+        @media (max-width: 640px) {
+            .info-panel {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 1rem;
+            }
+            .status-badge, .filename {
+                justify-content: center;
+            }
+            button {
+                justify-content: center;
+            }
+        }
+
+        /* subtle fullscreen hint */
+        .fullscreen-hint {
+            font-size: 0.7rem;
+            opacity: 0.6;
+            display: flex;
+            gap: 0.3rem;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="video-container">
+    <div class="video-wrapper">
+        <!-- 
+            video element that plays funn.mp4 from root folder.
+            autoplay attribute: attempts to start automatically.
+            playsinline is crucial for iOS / mobile auto-play policies.
+            muted is often required by browsers for autoplay without user interaction.
+            loop is optional but gives a seamless experience if needed.
+            preload="auto" ensures video loads quickly.
+        -->
+        <video 
+            id="mainVideo" 
+            autoplay 
+            muted 
+            playsinline 
+            loop 
+            preload="auto"
+            disablePictureInPicture="false"
+        >
+            <source src="funn.mp4" type="video/mp4">
+            Your browser does not support the video tag or the video format. 
+            Please try a different browser.
+        </video>
+    </div>
+    <div class="info-panel">
+        <div class="status-badge" id="statusBadge">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Initializing...</span>
+        </div>
+        <div class="filename">
+            📹 funn.mp4 (root)
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <button id="playPauseBtn" class="play-pause-btn">▶ Play</button>
+            <button id="muteToggleBtn">🔊 Mute</button>
+            <div class="fullscreen-hint">
+                ⛶ double‑click video
+            </div>
+        </div>
+    </div>
+    <div id="errorMsg" class="error-message"></div>
+</div>
+
+<script>
+    (function() {
+        // DOM elements
+        const video = document.getElementById('mainVideo');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const muteToggleBtn = document.getElementById('muteToggleBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusTextSpan = document.getElementById('statusText');
+        const errorDiv = document.getElementById('errorMsg');
+
+        // Helper: update status badge based on video state
+        function updatePlaybackStatus() {
+            if (!video) return;
+            
+            if (video.paused) {
+                statusTextSpan.innerText = 'Paused';
+                statusDot.classList.add('paused');
+                playPauseBtn.innerHTML = '▶ Play';
+            } else {
+                statusTextSpan.innerText = 'Playing';
+                statusDot.classList.remove('paused');
+                playPauseBtn.innerHTML = '⏸ Pause';
+            }
+        }
+
+        // Helper: update mute button icon/text
+        function updateMuteStatus() {
+            if (!video) return;
+            if (video.muted) {
+                muteToggleBtn.innerHTML = '🔇 Unmute';
+            } else {
+                muteToggleBtn.innerHTML = '🔊 Mute';
+            }
+        }
+
+        // Core: handle video loading errors (missing file, corrupted, etc)
+        function handleVideoError(e) {
+            console.error('Video error event:', e);
+            let errorMessage = 'Unable to load or play funn.mp4. ';
+            
+            // get detailed error code if available
+            if (video.error) {
+                const code = video.error.code;
+                switch(code) {
+                    case 1:
+                        errorMessage += 'The loading of the video was aborted.';
+                        break;
+                    case 2:
+                        errorMessage += 'Network error — file not found or server issue. Make sure "funn.mp4" exists in the root folder.';
+                        break;
+                    case 3:
+                        errorMessage += 'Video decoding failed. The file might be corrupted or unsupported.';
+                        break;
+                    case 4:
+                        errorMessage += 'Video format not supported by your browser.';
+                        break;
+                    default:
+                        errorMessage += 'Unknown error occurred.';
+                }
+            } else {
+                errorMessage += 'Could not access the video file. Please ensure "funn.mp4" is placed in the same directory as this HTML file.';
+            }
+            
+            errorDiv.style.display = 'block';
+            errorDiv.innerHTML = `⚠️ ${errorMessage} <br><small style="opacity:0.8;">Double-check that the filename is exactly "funn.mp4" (case-sensitive) and in the root.</small>`;
+            
+            // update status badge to error state
+            statusTextSpan.innerText = 'Error';
+            statusDot.style.backgroundColor = '#ef4444';
+            statusDot.classList.remove('paused');
+            statusDot.style.boxShadow = '0 0 6px #ef4444';
+            playPauseBtn.disabled = true;
+            muteToggleBtn.disabled = true;
+            playPauseBtn.style.opacity = '0.6';
+            muteToggleBtn.style.opacity = '0.6';
+        }
+
+        // clear error if video successfully loads metadata (or can play)
+        function clearErrorOnLoad() {
+            if (errorDiv.style.display === 'block') {
+                errorDiv.style.display = 'none';
+            }
+            // re-enable buttons if they were disabled
+            playPauseBtn.disabled = false;
+            muteToggleBtn.disabled = false;
+            playPauseBtn.style.opacity = '1';
+            muteToggleBtn.style.opacity = '1';
+            // reset status dot color if error styling was applied
+            statusDot.style.backgroundColor = '';
+            statusDot.style.boxShadow = '';
+            if (!video.paused) {
+                statusDot.classList.remove('paused');
+            } else {
+                statusDot.classList.add('paused');
+            }
+            updatePlaybackStatus();
+        }
+
+        // ATTEMPT AUTO-PLAY aggressively: Browsers may block autoplay with sound,
+        // but we have muted attribute. However, some policies still require user interaction.
+        // We'll try to play on page load, and also handle any promise rejection.
+        function attemptAutoPlay() {
+            if (!video) return;
+            // video is muted by default in HTML attribute, but let's ensure muted is true for best autoplay chance
+            video.muted = true;
+            updateMuteStatus();
+            
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    // Autoplay started successfully
+                    console.log('Autoplay succeeded');
+                    updatePlaybackStatus();
+                    clearErrorOnLoad();
+                }).catch(error => {
+                    console.warn('Autoplay was prevented:', error);
+                    // Even if autoplay fails (some browsers require user gesture even with muted),
+                    // we show paused state and let user click play button.
+                    // But the video element is ready, just not playing.
+                    statusTextSpan.innerText = 'Click to play';
+                    statusDot.classList.add('paused');
+                    playPauseBtn.innerHTML = '▶ Play';
+                    // Still show that video file exists if metadata loads fine.
+                    // Do not treat as file error, just autoplay policy.
+                    if (video.error === null) {
+                        // no critical error, just waiting user interaction
+                        errorDiv.style.display = 'none';
+                        playPauseBtn.disabled = false;
+                        muteToggleBtn.disabled = false;
+                    }
+                });
+            }
+        }
+
+        // Event listeners for video lifecycle
+        function bindVideoEvents() {
+            // When enough data loaded, clear any previous error and ensure status is correct
+            video.addEventListener('canplay', function() {
+                clearErrorOnLoad();
+                updatePlaybackStatus();
+            });
+            
+            video.addEventListener('loadedmetadata', function() {
+                clearErrorOnLoad();
+                updatePlaybackStatus();
+            });
+            
+            video.addEventListener('play', function() {
+                updatePlaybackStatus();
+                clearErrorOnLoad();
+            });
+            
+            video.addEventListener('pause', function() {
+                updatePlaybackStatus();
+            });
+            
+            video.addEventListener('playing', function() {
+                updatePlaybackStatus();
+            });
+            
+            video.addEventListener('waiting', function() {
+                statusTextSpan.innerText = 'Buffering...';
+            });
+            
+            video.addEventListener('error', handleVideoError);
+            
+            // For manual mute toggling
+            video.addEventListener('volumechange', function() {
+                updateMuteStatus();
+            });
+        }
+        
+        // Manual controls
+        function setupControls() {
+            playPauseBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (!video) return;
+                if (video.paused) {
+                    video.play().then(() => {
+                        updatePlaybackStatus();
+                    }).catch(err => {
+                        console.warn('Playback failed:', err);
+                        // If error appears due to missing file, handleVideoError would have triggered
+                        if (video.error) {
+                            handleVideoError();
+                        } else {
+                            // show temporary tip
+                            errorDiv.style.display = 'block';
+                            errorDiv.innerHTML = '⚠️ Playback blocked. Try clicking the video directly or check file existence.';
+                            setTimeout(() => {
+                                if (video.error === null) errorDiv.style.display = 'none';
+                            }, 3000);
+                        }
+                    });
+                } else {
+                    video.pause();
+                    updatePlaybackStatus();
+                }
+            });
+            
+            muteToggleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (!video) return;
+                video.muted = !video.muted;
+                updateMuteStatus();
+            });
+            
+            // double-click video to toggle fullscreen (modern browsers)
+            video.addEventListener('dblclick', function() {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen().catch(err => console.log(err));
+                } else {
+                    const container = video.parentElement;
+                    if (container.requestFullscreen) {
+                        container.requestFullscreen().catch(err => console.log(err));
+                    } else if (video.requestFullscreen) {
+                        video.requestFullscreen();
+                    }
+                }
+            });
+            
+            // also right click / context menu not blocked, but we keep defaults
+            // Ensure status dot updates on manual play via video click
+            video.addEventListener('click', function() {
+                // optional: allow play/pause on click (many users expect that)
+                // we'll implement as toggle for better UX
+                if (video.paused) {
+                    video.play().catch(e => console.log(e));
+                } else {
+                    video.pause();
+                }
+                updatePlaybackStatus();
+            });
+        }
+        
+        // Additional robust check: If the video source fails to even start loading, error event will be caught.
+        // But also manually check if network request might be blocked due to CORS or missing file.
+        // To give immediate feedback, we also try to see if the video's networkState indicates error.
+        function verifyVideoSource() {
+            // small delay to allow networkState to update
+            setTimeout(() => {
+                if (video.networkState === 3) { // NETWORK_NO_SOURCE
+                    handleVideoError(new Event('manualSourceError'));
+                } else if (video.readyState === 0 && !video.error) {
+                    // maybe still loading, but if after 2 seconds no metadata and no error, show warning
+                    setTimeout(() => {
+                        if (video.readyState === 0 && !video.error && errorDiv.style.display !== 'block') {
+                            errorDiv.style.display = 'block';
+                            errorDiv.innerHTML = '⚠️ Video seems to be loading slowly or missing. Verify that "funn.mp4" exists in the same folder as this HTML file.';
+                        }
+                    }, 2500);
+                }
+            }, 300);
+        }
+        
+        // init all
+        function init() {
+            bindVideoEvents();
+            setupControls();
+            
+            // set initial states
+            updateMuteStatus();
+            updatePlaybackStatus();
+            
+            // Explicitly ensure muted is true (prevents audio autoplay restrictions)
+            video.muted = true;
+            
+            // Attempt autoplay with robust fallback
+            attemptAutoPlay();
+            
+            // Verify source existence and show friendly error if needed
+            verifyVideoSource();
+            
+            // Additionally: if the video fails to load due to missing file, it will trigger error event.
+            // For extra safety, if user clicks the play button and there's no file, error will be shown.
+        }
+        
+        // Start everything when DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+</script>
+</body>
+</html>
